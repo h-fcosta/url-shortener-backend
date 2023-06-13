@@ -69,10 +69,10 @@ class urlsController {
 
       const shortUrl = req.params.shortUrl;
 
-      const user = await User.findById(userId.id, "-password");
+      const user = await User.findById(userId.sub, "-password");
 
       if (!user) {
-        return res.send(404).json({ message: "Usuário não encontrado" });
+        return res.status(404).json({ message: "Usuário não encontrado" });
       }
 
       await Urls.findOneAndUpdate(
@@ -91,14 +91,14 @@ class urlsController {
 
   //Deleta URL do BD
   static async removeUrl(req, res) {
+    const userId = jwt.verify(
+      req.headers.authorization.split(" ")[1],
+      process.env.SECRET_JWT
+    );
+
+    const urlId = req.params.idUrl;
+
     try {
-      const userId = jwt.verify(
-        req.headers.authorization.split(" ")[1],
-        process.env.SECRET_JWT
-      );
-
-      const urlId = req.params.idUrl;
-
       const user = await User.findById(userId.sub, "-password");
 
       //Verifica se o usuário existe no banco de dados
