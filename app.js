@@ -3,6 +3,7 @@ import dotEnv from "dotenv";
 import db from "./src/config/dbConnect.js";
 import routes from "./src/routes/index.js";
 import cookieParser from "cookie-parser";
+import cors from "cors";
 
 dotEnv.config();
 
@@ -11,6 +12,7 @@ const port = process.env.PORT || 3001;
 const host = "0.0.0.0";
 
 app.use(express.json());
+app.use(cors());
 app.use(cookieParser());
 routes(app);
 

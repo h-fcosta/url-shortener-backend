@@ -158,8 +158,8 @@ export default class AuthController {
           accessToken,
           newRefreshToken
         });
-    } catch (error) {
-      return console.log("não deu");
+    } catch {
+      return res.status(401).json({ message: "Unable to refresh tokens." });
     }
   }
 }
