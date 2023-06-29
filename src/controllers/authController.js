@@ -94,7 +94,8 @@ export default class AuthController {
       res.status(200).set("Authorization", accessToken).json({
         message: "Login efetuado com sucesso",
         accessToken,
-        refreshToken
+        refreshToken,
+        findUser
       });
     } catch (error) {
       console.log(error);
