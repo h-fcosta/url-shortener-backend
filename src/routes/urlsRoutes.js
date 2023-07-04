@@ -9,6 +9,11 @@ router
   .post("/newUrl", authenticateToken, UrlsController.originalUrl)
   .delete("/deleteUrl/:idUrl", authenticateToken, UrlsController.removeUrl)
   .put("/editUrl/:idUrl", authenticateToken, UrlsController.editOriginalUrl)
+  .put(
+    "/editShortenedUrl/:idUrl",
+    authenticateToken,
+    UrlsController.editShortenedUrl
+  )
   .get("/:shortUrl", UrlsController.shortUrl);
 
 export default router;

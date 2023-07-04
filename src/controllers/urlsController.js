@@ -69,6 +69,36 @@ class urlsController {
 
       const idUrl = req.params.idUrl;
       const original_url = req.body.original_url;
+
+      const user = await User.findById(userId.sub, "-password");
+
+      if (!user) {
+        return res.status(404).json({ message: "Usuário não encontrado" });
+      }
+
+      await Urls.findByIdAndUpdate(
+        { _id: idUrl },
+        { original_url: original_url }
+      );
+
+      await user.save();
+
+      res.status(200).json({ message: "URL original alterada." });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ message: "URL não pode ser alterada" });
+    }
+  }
+
+  //Edita URL original
+  static async editShortenedUrl(req, res) {
+    try {
+      const userId = jwt.verify(
+        req.headers.authorization.split(" ")[1],
+        process.env.SECRET_JWT
+      );
+
+      const idUrl = req.params.idUrl;
       const short_url = req.body.short_url;
 
       const user = await User.findById(userId.sub, "-password");
@@ -82,10 +112,7 @@ class urlsController {
         return res.status(404).json({ message: "Usuário não encontrado" });
       }
 
-      await Urls.findByIdAndUpdate(
-        { _id: idUrl },
-        { original_url: original_url, short_url: short_url }
-      );
+      await Urls.findByIdAndUpdate({ _id: idUrl }, { short_url: short_url });
 
       await user.save();
 
