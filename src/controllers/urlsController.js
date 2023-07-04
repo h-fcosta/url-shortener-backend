@@ -67,17 +67,24 @@ class urlsController {
         process.env.SECRET_JWT
       );
 
-      const shortUrl = req.params.shortUrl;
+      const idUrl = req.params.idUrl;
+      const original_url = req.body.original_url;
+      const short_url = req.body.short_url;
 
       const user = await User.findById(userId.sub, "-password");
+      const findShortenedUrl = await Urls.findOne({ short_url: short_url });
+
+      if (findShortenedUrl) {
+        return res.status(400).json({ message: "URL encurtada já utilizada" });
+      }
 
       if (!user) {
         return res.status(404).json({ message: "Usuário não encontrado" });
       }
 
-      await Urls.findOneAndUpdate(
-        { short_url: shortUrl },
-        { original_url: req.body.original_url }
+      await Urls.findByIdAndUpdate(
+        { _id: idUrl },
+        { original_url: original_url, short_url: short_url }
       );
 
       await user.save();

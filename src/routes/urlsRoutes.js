@@ -8,7 +8,7 @@ router
   .get("/getUrls", authenticateToken, UrlsController.getUrls)
   .post("/newUrl", authenticateToken, UrlsController.originalUrl)
   .delete("/deleteUrl/:idUrl", authenticateToken, UrlsController.removeUrl)
-  .put("/editUrl/:shortUrl", authenticateToken, UrlsController.editOriginalUrl)
+  .put("/editUrl/:idUrl", authenticateToken, UrlsController.editOriginalUrl)
   .get("/:shortUrl", UrlsController.shortUrl);
 
 export default router;
