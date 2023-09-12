@@ -5,6 +5,7 @@ import { authenticateToken } from "../controllers/middleware.js";
 const router = express.Router();
 
 router
+  .get("/getAllUrls", UrlsController.getAllUrls)
   .get("/getUrls", authenticateToken, UrlsController.getUrls)
   .post("/newUrl", authenticateToken, UrlsController.originalUrl)
   .delete("/deleteUrl/:idUrl", authenticateToken, UrlsController.removeUrl)

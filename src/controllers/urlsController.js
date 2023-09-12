@@ -19,6 +19,16 @@ class urlsController {
     }
   }
 
+  static async getAllUrls(req, res) {
+    try {
+      const listUrls = await Urls.find();
+
+      return res.status(200).json(listUrls);
+    } catch (error) {
+      res.status(500).json({ message: "Não foi possível listar as URLs" });
+    }
+  }
+
   //Envia URL para encurtar e cria referências entre os modelos (User e URL)
   static async originalUrl(req, res) {
     const { original_url } = req.body;
