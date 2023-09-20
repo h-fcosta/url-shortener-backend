@@ -10,9 +10,12 @@ export default class AuthController {
   static async registerUser(req, res) {
     const { name, username, email, password, confirmPassword } = req.body;
 
+    const usernameExists = await User.findOne({ username: username });
+
     const validationErrors = validateRegisterInput(
       name,
       username,
+      usernameExists,
       email,
       password,
       confirmPassword
@@ -20,12 +23,6 @@ export default class AuthController {
 
     if (Object.keys(validationErrors).length > 0) {
       return res.status(400).json({ errors: validationErrors });
-    }
-
-    const usernameExists = await User.findOne({ username: username });
-
-    if (usernameExists) {
-      return res.status(422).json({ message: "Usuário existente" });
     }
 
     try {
@@ -86,7 +83,7 @@ export default class AuthController {
 
       res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
-        // secure: true, //Set to true when use https://
+        secure: true, //Set to true when use https://
         sameSite: "strict",
         maxAge: 604800000
       });

@@ -16,6 +16,7 @@ export async function authenticateToken(req, res, next) {
 export function validateRegisterInput(
   name,
   username,
+  usernameExists,
   email,
   password,
   confirmPassword
@@ -26,6 +27,10 @@ export function validateRegisterInput(
     errors.name = "Nome obrigatório";
   }
 
+  if (usernameExists) {
+    errors.username = "Usuário em uso";
+  }
+
   if (!username || username.trim() === "") {
     errors.username = "Usuário obrigatório";
   }
@@ -34,8 +39,19 @@ export function validateRegisterInput(
     errors.email = "E-mail obrigatório";
   }
 
-  if (!password || password.trim() === "" || password.length < 5) {
-    errors.password = "Senha deve ter no mínimo 5 caracteres";
+  if (!password || password.trim() === "") {
+    errors.password = "Senha obrigatória";
+  } else if (password.length < 8) {
+    errors.password = "Senha deve ter no mínimo 8 caracteres";
+  } else if (!/[a-z]/.test(password)) {
+    errors.password = "Senha deve conter pelo menos uma letra minúscula";
+  } else if (!/[A-Z]/.test(password)) {
+    errors.password = "Senha deve conter pelo menos uma letra maiúscula";
+  } else if (!/\d/.test(password)) {
+    errors.password = "Senha deve conter pelo menos um número";
+  } else if (!/[!@#$%^&*]/.test(password)) {
+    errors.password =
+      "Senha deve conter pelo menos um dos seguintes caracteres: !@#$%^&*";
   }
 
   if (
