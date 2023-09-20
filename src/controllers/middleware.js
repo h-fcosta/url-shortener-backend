@@ -66,8 +66,12 @@ export function validateRegisterInput(
 }
 
 //Validação dos inputs do login
-export function validateLoginInput(username, password) {
+export function validateLoginInput(username, password, checkPassword) {
   const errors = {};
+
+  if (!checkPassword) {
+    errors.password = "Senha incorreta";
+  }
 
   if (!username || username.trim() === "") {
     errors.username = "Usuário obrigatório";

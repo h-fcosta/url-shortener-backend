@@ -47,22 +47,25 @@ export default class AuthController {
   //Login usuário
   static async loginUser(req, res) {
     const { username, password } = req.body;
-    const validationErrors = validateLoginInput(username, password);
-
-    if (Object.keys(validationErrors).length > 0) {
-      return res.status(400).json({ errors: validationErrors });
-    }
 
     const findUser = await User.findOne({ username: username });
 
     if (!findUser) {
-      return res.status(404).json({ message: "Usuário não encontrado" });
+      return res
+        .status(400)
+        .json({ errors: { username: "Usuário incorreto ou não encontrado" } });
     }
 
     const checkPassword = await bcrypt.compare(password, findUser.password);
 
-    if (!checkPassword) {
-      return res.status(422).json({ message: "Usuário ou senha incorretos" });
+    const validationErrors = validateLoginInput(
+      username,
+      password,
+      checkPassword
+    );
+
+    if (Object.keys(validationErrors).length > 0) {
+      return res.status(400).json({ errors: validationErrors });
     }
 
     try {
