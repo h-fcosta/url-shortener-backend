@@ -8,7 +8,7 @@ import cors from "cors";
 dotEnv.config();
 
 const app = express();
-const port = process.env.PORT || 3001;
+const PORT = process.env.PORT || 8080;
 const host = "0.0.0.0";
 
 app.use(express.json());
@@ -17,7 +17,7 @@ app.use(cookieParser());
 routes(app);
 
 app.listen(port, host, () => {
-  console.log(`SERVIDOR OUVINDO EM http://localhost:${port}`);
+  console.log(`SERVIDOR OUVINDO NA PORTA: ${PORT}`);
 });
 
 db.on("error", console.log.bind(console, "Erro de conexão"));
