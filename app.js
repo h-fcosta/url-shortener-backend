@@ -9,14 +9,13 @@ dotEnv.config();
 
 const app = express();
 const PORT = process.env.PORT || 8080;
-const host = "0.0.0.0";
 
 app.use(express.json());
 app.use(cors());
 app.use(cookieParser());
 routes(app);
 
-app.listen(port, host, () => {
+app.listen(PORT, () => {
   console.log(`SERVIDOR OUVINDO NA PORTA: ${PORT}`);
 });
 
