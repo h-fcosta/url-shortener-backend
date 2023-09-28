@@ -15,6 +15,6 @@ router
     authenticateToken,
     UrlsController.editShortenedUrl
   )
-  .get("/:shortUrl", UrlsController.shortUrl);
+  .get("/api/:shortUrl", UrlsController.shortUrl);
 
 export default router;

@@ -178,11 +178,11 @@ class urlsController {
     const short = await Urls.findOne({ short_url: req.params.shortUrl });
 
     try {
-      if (short == null) {
+      if (short === null) {
         return res.status(404).json({ message: "URL não existe" });
       }
 
-      res.redirect(short.original_url);
+      return res.status(200).json(short.original_url);
     } catch (error) {
       console.log(error);
     }
