@@ -1,15 +1,23 @@
-import redisClient from "../config/redis.js";
+import bcrypt from "bcrypt";
+import TokensBlacklist from "../models/TokensBlacklist.js";
 
 //Autenticação de token do usuário
 export async function authenticateToken(req, res, next) {
   const accessToken = req.headers.authorization?.split(" ")[1];
-  const searchToken = await redisClient.get(`blacklist: ${accessToken}`);
+
+  const searchToken = await TokensBlacklist.findOne({
+    revokedToken: accessToken
+  });
 
   if (searchToken) {
     return res.status(401).json({ message: "Access token invalid" });
   }
 
   next();
+}
+
+export function hashData(data) {
+  return bcrypt.hash(data, 12);
 }
 
 //Validação dos inputs do registro

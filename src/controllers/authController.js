@@ -1,9 +1,12 @@
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-import crypto from "crypto";
-import redisClient from "../config/redis.js";
 import User from "../models/User.js";
-import { validateRegisterInput, validateLoginInput } from "./middleware.js";
+import {
+  validateRegisterInput,
+  validateLoginInput,
+  hashData
+} from "./middleware.js";
+import TokensBlacklist from "../models/TokensBlacklist.js";
 
 export default class AuthController {
   //Cadastro usuário
@@ -26,8 +29,8 @@ export default class AuthController {
     }
 
     try {
-      const salt = await bcrypt.genSalt(12);
-      const passwordHash = await bcrypt.hash(password, salt);
+      const passwordHash = await hashData(password);
+
       const newUser = new User({
         name,
         username,
@@ -39,7 +42,7 @@ export default class AuthController {
 
       res.status(201).json({ message: "Usuário criado com sucesso" });
     } catch (error) {
-      console.log(error);
+      console.error(error);
       res.status(500).json({ message: "Internal server error" });
     }
   }
@@ -70,18 +73,22 @@ export default class AuthController {
 
     try {
       const accessToken = jwt.sign(
-        { sub: findUser._id },
+        { sub: findUser._id, email: findUser.email },
         process.env.SECRET_JWT,
         { expiresIn: "15m" }
       );
 
-      const refreshToken = crypto.randomBytes(64).toString("hex");
+      const refreshToken = jwt.sign(
+        { sub: findUser._id, username: findUser.username },
+        process.env.REFRESH_SECRET_JWT,
+        { expiresIn: "7d" }
+      );
 
-      await redisClient.set(
-        refreshToken,
-        findUser._id.toString(),
-        "EX",
-        604800
+      const refreshTokenHash = await hashData(refreshToken);
+
+      await User.updateOne(
+        { username: username },
+        { refreshToken: refreshTokenHash }
       );
 
       res.cookie("refreshToken", refreshToken, {
@@ -93,12 +100,12 @@ export default class AuthController {
 
       res.status(200).set("Authorization", accessToken).json({
         message: "Login efetuado com sucesso",
+        name: findUser.name,
         accessToken,
-        refreshToken,
-        findUser
+        refreshTokenHash
       });
     } catch (error) {
-      console.log(error);
+      console.error(error);
       res.status(500).json({ message: "Login não permitido" });
     }
   }
@@ -106,16 +113,21 @@ export default class AuthController {
   //Logout usuário
   static async logoutUser(req, res) {
     try {
-      const refreshToken = req.cookies.refreshToken;
-
       const accessToken = req.headers.authorization.split(" ")[1];
 
-      redisClient.set(`blacklist: ${accessToken}`, "revoked");
+      const userId = jwt.verify(accessToken, process.env.SECRET_JWT);
 
-      redisClient.del(refreshToken);
+      await TokensBlacklist.create({ revokedToken: accessToken });
+
+      await User.findByIdAndUpdate({ _id: userId.sub }, { refreshToken: null });
+
+      res.cookie("refreshToken", "", { maxAge: 0 });
 
       res.json({ message: "Logout efetuado" });
-    } catch (error) {}
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Erro ao efetuar o logout" });
+    }
   }
 
   //Renovação de token de sessão
@@ -128,23 +140,41 @@ export default class AuthController {
           .status(401)
           .json({ message: "Refresh Token não encontrado" });
       }
-      const userId = await redisClient.get(refreshToken);
 
-      if (!userId) {
+      const userId = jwt.verify(refreshToken, process.env.REFRESH_SECRET_JWT);
+      const storedToken = await User.findById({ _id: userId.sub });
+
+      const refreshTokenMatches = await bcrypt.compare(
+        refreshToken,
+        storedToken.refreshToken
+      );
+
+      if (!refreshTokenMatches) {
         return res
           .status(401)
           .json({ message: "Invalid or expired Refresh Token" });
       }
 
-      const accessToken = jwt.sign({ sub: userId }, process.env.SECRET_JWT, {
-        expiresIn: "15m"
-      });
+      const accessToken = jwt.sign(
+        { sub: storedToken._id, email: storedToken.email },
+        process.env.SECRET_JWT,
+        {
+          expiresIn: "15m"
+        }
+      );
 
-      const newRefreshToken = crypto.randomBytes(64).toString("hex");
+      const newRefreshToken = jwt.sign(
+        { sub: storedToken._id, username: storedToken.username },
+        process.env.REFRESH_SECRET_JWT,
+        { expiresIn: "7d" }
+      );
 
-      await redisClient.set(newRefreshToken, userId, "EX", 604800);
+      const newRefreshTokenHash = await hashData(newRefreshToken);
 
-      await redisClient.del(refreshToken);
+      await User.findByIdAndUpdate(
+        { _id: storedToken._id },
+        { refreshToken: newRefreshTokenHash }
+      );
 
       return res
         .status(201)
@@ -157,9 +187,10 @@ export default class AuthController {
         })
         .json({
           accessToken,
-          newRefreshToken
+          newRefreshTokenHash
         });
-    } catch {
+    } catch (error) {
+      console.error(error);
       return res.status(401).json({ message: "Unable to refresh tokens." });
     }
   }
